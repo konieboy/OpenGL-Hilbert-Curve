@@ -1,9 +1,19 @@
 // ==========================================================================
-// An Object-Oriented Boilerplate Code for GLFW
+// A Hilbert Curve Generator
 //
-// Author:  Kamyar Allahverdi, University of Calgary. Minor tweaks by Haysn Hornbeck.
-// Date:    January 2017
+// Based on Boilerplate code by Kamyar Allahverdi
+// Author:  Konrad Winsiewski, University of Calgary.
+// Date:    October 2017
+// Resources:
+// http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/
+// http://www.glfw.org/docs/latest/window_guide.html
 // ==========================================================================
+
+
+// To-do
+// Convert line vertexes to triangles
+// Switch between representations
+
 
 
 #include <iostream>
@@ -41,6 +51,8 @@ using std::endl;
 int SHEIGHT = 512;
 int SWIDTH = 512;
 
+bool isLine = true;
+
 // This is the base case representation of a Hilbert Curve
 // Looks like:
 //  _
@@ -54,10 +66,6 @@ vector<float> BaseVertex = {
 };
 
 vector<float> BaseVertexTriangles = {	
-	-1.0, -1.0,
-	-1.0, 1.0,
-	 1.0, 1.0,
-	 1.0, -1.0
 };
 
 
@@ -70,6 +78,9 @@ GLfloat g_color_buffer_data[999] = {
 
 // number of times to recurse
 int n = 1;
+
+// Is start line Vertical or Horizontal
+bool isVertical = true;
 
 // Generate color gradient
 void genColor()
@@ -92,6 +103,117 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
+
+void convertToTriangle()
+{	
+	BaseVertexTriangles = {}; // clear
+	
+	if (n%2 != 0)
+		isVertical = true;
+
+	//bool isVerticalTemp = isVertical;
+
+	for (unsigned int i = 0 ; i < BaseVertex.size() - 2; i = i + 2)
+	{	
+
+
+		// Check if horizontal or vertical line
+
+		if (isVertical)
+		{	
+			BaseVertexTriangles.push_back(BaseVertex[i]);
+			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
+			
+			BaseVertexTriangles.push_back(BaseVertex[i + 2]);
+			BaseVertexTriangles.push_back(BaseVertex[i + 3]);
+
+			// Add first triangle
+			// Check if x will go out of bounds
+			float newVertex1x = 0.0;			
+			if (BaseVertex[i + 2] + 0.01 > 1.0)
+			{
+				newVertex1x = BaseVertex[i + 2] - 0.1; //decrease x by one
+			}
+			else
+			{
+				newVertex1x = BaseVertex[i + 2] + 0.1; //increase x by one				
+			}
+			
+			float newVertex1y = BaseVertex[i + 3];
+			BaseVertexTriangles.push_back(newVertex1x);
+			BaseVertexTriangles.push_back(newVertex1y);
+
+			// Add 2nd triangle
+			float newVertex2x = 0.0;
+			if (BaseVertex[i + 2] + 0.01 > 1.0)
+			{
+				newVertex2x = BaseVertex[i + 2] - 0.1; //decrease x by one
+			}
+			else
+			{
+				newVertex2x = BaseVertex[i + 2] + 0.1; //increase x by one				
+			}
+			float newVertex2y = BaseVertex[i+1];
+
+			BaseVertexTriangles.push_back(BaseVertex[i]);
+			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
+
+			BaseVertexTriangles.push_back(newVertex1x);
+			BaseVertexTriangles.push_back(newVertex1y);
+
+			BaseVertexTriangles.push_back(newVertex2x);
+			BaseVertexTriangles.push_back(newVertex2y);
+		}
+		else // Horizontal Line
+		{
+			BaseVertexTriangles.push_back(BaseVertex[i]);
+			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
+			
+			BaseVertexTriangles.push_back(BaseVertex[i + 2]);
+			BaseVertexTriangles.push_back(BaseVertex[i + 3]);
+
+			// Add first triangle
+			float newVertex1x = BaseVertex[i + 2]; 
+			float newVertex1y = BaseVertex[i + 3] - 0.1;
+			BaseVertexTriangles.push_back(newVertex1x);
+			BaseVertexTriangles.push_back(newVertex1y);
+
+			// Add 2nd triangle
+			float newVertex2x = BaseVertex[i];
+			float newVertex2y = BaseVertex[i+1] - 0.1; //decrease y by one
+
+			BaseVertexTriangles.push_back(BaseVertex[i]);
+			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
+
+			BaseVertexTriangles.push_back(newVertex1x);
+			BaseVertexTriangles.push_back(newVertex1y);
+
+			BaseVertexTriangles.push_back(newVertex2x);
+			BaseVertexTriangles.push_back(newVertex2y);
+		}
+
+		isVertical = !isVertical;
+		
+		// BaseVertexTriangles.push_back(newVertex1);
+
+		// int newVertex2 = BaseVertex[i] + 0.01;
+		
+		// //push triangle 2
+		// BaseVertexTriangles.push_back(BaseVertex[i]);
+		// BaseVertexTriangles.push_back(newVertex1);
+		// BaseVertexTriangles.push_back(newVertex2);
+	}
+
+	//isVertical = !isVerticalTemp;
+
+	//Debug contents
+	for (unsigned int i = 0 ;i < BaseVertexTriangles.size() - 1; i += 2)
+	{
+		cout << "[" << BaseVertexTriangles[i] <<"][" << BaseVertexTriangles[i+1] <<"]" << endl;
+	}
+
+}
+
 
 class Program {
 	GLuint vertex_shader;
@@ -321,6 +443,23 @@ void render(Program &program, VertexArray &va) {
 	glUseProgram(0);
 }
 
+void renderTriangles(Program &program, VertexArray &va) {
+	// clear screen to a dark grey colour
+	
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	//glLineWidth(4.0f);
+	glPointSize(5.0f);
+
+	glUseProgram(program.id);
+	glBindVertexArray(va.id);
+	glDrawArrays(GL_TRIANGLES, 0, va.count);
+
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+
 
 void hilbertCalc()
 {
@@ -454,6 +593,25 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			hilbertCalc();
 		}
 	}
+
+	// Change veiw from: 
+	// line to triangle
+	// or triangle to line
+	if (key == GLFW_KEY_V && action == GLFW_PRESS)
+	{
+		isLine = !isLine;
+
+		if (isLine)
+		{
+			cout << "Rendering mode: line\n";
+		}
+		else
+		{
+			convertToTriangle();
+			cout << "Rendering mode: Triangles\n";
+		}
+	}
+
 		
 }
 
@@ -508,24 +666,37 @@ int main(int argc, char *argv[]) {
 
 		//usleep(300);
 		// Number of vertexes needed = (2^n * 2^n)
-		int numberOfVerticesNeeded = (pow(2,n) * pow(2,n));
+
+		if (isLine)
+		{
+			int numberOfVerticesNeeded = (pow(2,n) * pow(2,n));			
+			
+			VertexArray baseCase(numberOfVerticesNeeded);
 	
-		//printf( "%u\n", numberOfVerticesNeeded);
-		
+			baseCase.addBuffer("v", 0, BaseVertex);
 	
-		VertexArray baseCase(numberOfVerticesNeeded);
+			render(p, baseCase);
+	
+			glfwSwapBuffers(window);
+	
+			glfwPollEvents();
+		}
+		else
+		{
+			int numberOfVerticesNeeded = (BaseVertexTriangles.size()/2);			
+			
+			VertexArray baseCase(numberOfVerticesNeeded);
+	
+			baseCase.addBuffer("v", 0, BaseVertexTriangles);
+	
+			renderTriangles(p, baseCase);
+	
+			glfwSwapBuffers(window);
+	
+			glfwPollEvents();
+		}
 
-		//genColor();
-		
-		//hilbertCalc();
-		baseCase.addBuffer("v", 0, BaseVertex);
 
-
-		render(p, baseCase);
-
-		glfwSwapBuffers(window);
-
-		glfwPollEvents();
 	}
 
 	glfwDestroyWindow(window);

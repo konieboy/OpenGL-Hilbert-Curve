@@ -9,8 +9,7 @@ in vec2 vertexPosition;
 
 void main() {
   	//color = fragmentColor;
-    FragmentColour = vec4(cos(vertexPosition[0] + 1), sin(vertexPosition[1]) + 1, vertexPosition[0] + 1, 1);
-
+    FragmentColour = vec4(cos(vertexPosition[0] + 1), sin(vertexPosition[1]) + 1, sin(vertexPosition[0]) + 1, 1);
 }
 
 
