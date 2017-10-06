@@ -74,7 +74,7 @@ GLfloat g_color_buffer_data[999] = {
     0.822f,  0.569f,  0.201f, 1.0f
 };
 
-float triangleWidth = 0.005;
+float triangleWidth = 0.03;
 
 // number of times to recurse
 int n = 1;

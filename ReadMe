@@ -1,0 +1,21 @@
+ReadME
+==========================================================================
+A Hilbert Curve Generator
+
+Based on Boilerplate code by Kamyar Allahverdi
+Author:  Konrad Wisniewski, University of Calgary
+Date:    October 2017
+Resources:
+http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/
+http://www.glfw.org/docs/latest/window_guide.html
+==========================================================================
+
+To Run:
+
+1) CD into the root folder
+2) excecute cmd "make run"
+3) Use V to change view mode (default is line)
+4) Use Up and Down to change interation level (default is 1)
+5) Resize screen to your hearts content
+6) Enjoy!
+
