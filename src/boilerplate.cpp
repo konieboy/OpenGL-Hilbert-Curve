@@ -9,13 +9,6 @@
 // http://www.glfw.org/docs/latest/window_guide.html
 // ==========================================================================
 
-
-// To-do
-// Convert line vertexes to triangles
-// Switch between representations
-
-
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -81,6 +74,8 @@ GLfloat g_color_buffer_data[999] = {
     0.822f,  0.569f,  0.201f, 1.0f
 };
 
+float triangleWidth = 0.005;
+
 // number of times to recurse
 int n = 1;
 
@@ -109,50 +104,84 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+// Converts the line representation to a Triangle representation
+// This function is crazy but it kinda has to be
 void convertToTriangle()
 {	
 	BaseVertexTriangles = {}; // clear
+
+	// Set the line width 
+	float lineWidthV = triangleWidth;
+	float lineWidthH = triangleWidth;
+
+	bool wasLastHorizontalRight = false;
+	bool wasLastVerticalUp = false;
 	
-	// Starting position flip flops between vertical and horizontal
-	// if (n%2 != 0)
-	// 	isVertical = true;
-
-	//bool isVerticalTemp = isVertical;
-
 	for (unsigned int i = 0 ; i < BaseVertex.size() - 2; i = i + 2)
 	{	
 
 		// Reset values
 		float newVertex1x = 0.0;			
 		float newVertex2x = 0.0;
-		
+			
 		// Check if horizontal or vertical line	
 		// If the x values change then the line is horizontal
-		if (BaseVertex[i] != BaseVertex[i+2])
+		if (std::abs(BaseVertex[i]  - BaseVertex[i+2]) > 0.000001)
 		{
 			isVertical = false;
 		} 
-		else
+
+		// If the x values change then the line is vertical
+		if (std::abs(BaseVertex[i+1]  - BaseVertex[i+3]) > 0.000001)
 		{
 			isVertical = true;
 		} 
 
-
 		if (isVertical)
-		{			
+		{	
+
+			if (BaseVertex[i+1] < BaseVertex[i+3])
+			{
+				wasLastVerticalUp = true;
+			}
+			else
+			{
+				wasLastVerticalUp = false;				
+			}
+
+			if (wasLastHorizontalRight && lineWidthH < 0)
+			{
+				lineWidthV = -triangleWidth;
+			}
+
+			if (wasLastHorizontalRight && lineWidthH > 0)
+			{
+				lineWidthV = -triangleWidth;
+			}
+
+			if (!wasLastHorizontalRight && lineWidthH < 0)
+			{
+				lineWidthV = triangleWidth;
+			}
+
+			if (!wasLastHorizontalRight && lineWidthH > 0)
+			{
+				lineWidthV = triangleWidth;
+			}
+
 			BaseVertexTriangles.push_back(BaseVertex[i]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
 			
 			BaseVertexTriangles.push_back(BaseVertex[i + 2]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 3]);
 
-			newVertex1x = BaseVertex[i + 2] - 0.05; //decrease x by one
+			newVertex1x = BaseVertex[i + 2] + lineWidthV; //Increase x by lineWidthV
 			
 			float newVertex1y = BaseVertex[i + 3];
 			BaseVertexTriangles.push_back(newVertex1x);
 			BaseVertexTriangles.push_back(newVertex1y);
 
-			newVertex2x = BaseVertex[i + 2] - 0.05; //decrease x by one
+			newVertex2x = BaseVertex[i + 2] + lineWidthV; //Increase x by lineWidthV
 
 			float newVertex2y = BaseVertex[i+1];
 
@@ -164,9 +193,44 @@ void convertToTriangle()
 
 			BaseVertexTriangles.push_back(newVertex2x);
 			BaseVertexTriangles.push_back(newVertex2y);
+
+
 		}
 		else // Horizontal Line
-		{			
+		{
+
+			// Figure out what direction to draw triangles in
+			if (wasLastVerticalUp && lineWidthV < 0)
+			{
+				lineWidthH = -triangleWidth;
+			}
+
+			if (wasLastVerticalUp && lineWidthV > 0)
+			{
+				lineWidthH = -triangleWidth;
+			}
+
+			if (!wasLastVerticalUp && lineWidthV < 0)
+			{
+				lineWidthH = triangleWidth;
+			}
+
+			if (!wasLastVerticalUp && lineWidthV > 0)
+			{
+				lineWidthH = triangleWidth;
+			}
+
+			// Set wasLastHorizontalRight
+			if (BaseVertex[i] < BaseVertex[i+2])
+			{
+				wasLastHorizontalRight = true;
+			}
+			else
+			{
+				wasLastHorizontalRight = false;				
+			}			
+
+			// Push values to the triangle vector
 			BaseVertexTriangles.push_back(BaseVertex[i]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
 			
@@ -175,13 +239,13 @@ void convertToTriangle()
 
 			// Add first triangle
 			float newVertex1x = BaseVertex[i + 2]; 
-			float newVertex1y = BaseVertex[i + 3] - 0.05;
+			float newVertex1y = BaseVertex[i + 3] + lineWidthH;
 			BaseVertexTriangles.push_back(newVertex1x);
 			BaseVertexTriangles.push_back(newVertex1y);
 
 			// Add 2nd triangle
 			float newVertex2x = BaseVertex[i];
-			float newVertex2y = BaseVertex[i+1] - 0.05; //decrease y by one
+			float newVertex2y = BaseVertex[i+1] + lineWidthH; //decrease y by lineWidthH
 
 			BaseVertexTriangles.push_back(BaseVertex[i]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
@@ -192,7 +256,6 @@ void convertToTriangle()
 			BaseVertexTriangles.push_back(newVertex2x);
 			BaseVertexTriangles.push_back(newVertex2y);
 		}
-
 	}
 
 	// Debug info
@@ -633,6 +696,27 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			cout << "Debug Mode Turned On!\n";
 		}	
 	}
+
+	// Add width from triangle display
+	if (key == GLFW_KEY_O && action == GLFW_PRESS)
+	{
+		if (!isLine)
+		{
+			triangleWidth += 0.005;
+			convertToTriangle();
+		}
+
+	}
+
+	// Remove width from triangle display
+	if (key == GLFW_KEY_P && action == GLFW_PRESS)
+	{	
+		if (!isLine && triangleWidth >= 0.005)
+		{
+			triangleWidth -= 0.005;
+			convertToTriangle();
+		}
+	}
 		
 }
 
@@ -682,12 +766,8 @@ int main(int argc, char *argv[]) {
 
 	// run an event-triggered main loop
 	while (!glfwWindowShouldClose(window)) {
-		// render
-		//render(p, baseCase);
 
-		//usleep(300);
-		// Number of vertexes needed = (2^n * 2^n)
-
+		// Render in line mode
 		if (isLine)
 		{
 			int numberOfVerticesNeeded = (pow(2,n) * pow(2,n));			
@@ -702,6 +782,7 @@ int main(int argc, char *argv[]) {
 	
 			glfwPollEvents();
 		}
+		// Render in triangle mode
 		else
 		{
 			int numberOfVerticesNeeded = (BaseVertexTriangles.size()/2);			
