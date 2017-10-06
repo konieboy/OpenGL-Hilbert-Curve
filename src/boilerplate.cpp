@@ -2,7 +2,7 @@
 // A Hilbert Curve Generator
 //
 // Based on Boilerplate code by Kamyar Allahverdi
-// Author:  Konrad Winsiewski, University of Calgary.
+// Author:  Konrad Wisniewski, University of Calgary
 // Date:    October 2017
 // Resources:
 // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-4-a-colored-cube/
@@ -51,7 +51,11 @@ using std::endl;
 int SHEIGHT = 512;
 int SWIDTH = 512;
 
+// True: render lines, False: Render Triangles
 bool isLine = true;
+
+// True: print debug info
+bool debugModeOn = false;
 
 // This is the base case representation of a Hilbert Curve
 // Looks like:
@@ -65,6 +69,7 @@ vector<float> BaseVertex = {
 	 1.0, -1.0
 };
 
+// Start 
 vector<float> BaseVertexTriangles = {	
 };
 
@@ -108,51 +113,47 @@ void convertToTriangle()
 {	
 	BaseVertexTriangles = {}; // clear
 	
-	if (n%2 != 0)
-		isVertical = true;
+	// Starting position flip flops between vertical and horizontal
+	// if (n%2 != 0)
+	// 	isVertical = true;
 
 	//bool isVerticalTemp = isVertical;
 
 	for (unsigned int i = 0 ; i < BaseVertex.size() - 2; i = i + 2)
 	{	
 
+		// Reset values
+		float newVertex1x = 0.0;			
+		float newVertex2x = 0.0;
+		
+		// Check if horizontal or vertical line	
+		// If the x values change then the line is horizontal
+		if (BaseVertex[i] != BaseVertex[i+2])
+		{
+			isVertical = false;
+		} 
+		else
+		{
+			isVertical = true;
+		} 
 
-		// Check if horizontal or vertical line
 
 		if (isVertical)
-		{	
+		{			
 			BaseVertexTriangles.push_back(BaseVertex[i]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
 			
 			BaseVertexTriangles.push_back(BaseVertex[i + 2]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 3]);
 
-			// Add first triangle
-			// Check if x will go out of bounds
-			float newVertex1x = 0.0;			
-			if (BaseVertex[i + 2] + 0.01 > 1.0)
-			{
-				newVertex1x = BaseVertex[i + 2] - 0.1; //decrease x by one
-			}
-			else
-			{
-				newVertex1x = BaseVertex[i + 2] + 0.1; //increase x by one				
-			}
+			newVertex1x = BaseVertex[i + 2] - 0.05; //decrease x by one
 			
 			float newVertex1y = BaseVertex[i + 3];
 			BaseVertexTriangles.push_back(newVertex1x);
 			BaseVertexTriangles.push_back(newVertex1y);
 
-			// Add 2nd triangle
-			float newVertex2x = 0.0;
-			if (BaseVertex[i + 2] + 0.01 > 1.0)
-			{
-				newVertex2x = BaseVertex[i + 2] - 0.1; //decrease x by one
-			}
-			else
-			{
-				newVertex2x = BaseVertex[i + 2] + 0.1; //increase x by one				
-			}
+			newVertex2x = BaseVertex[i + 2] - 0.05; //decrease x by one
+
 			float newVertex2y = BaseVertex[i+1];
 
 			BaseVertexTriangles.push_back(BaseVertex[i]);
@@ -165,7 +166,7 @@ void convertToTriangle()
 			BaseVertexTriangles.push_back(newVertex2y);
 		}
 		else // Horizontal Line
-		{
+		{			
 			BaseVertexTriangles.push_back(BaseVertex[i]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
 			
@@ -174,13 +175,13 @@ void convertToTriangle()
 
 			// Add first triangle
 			float newVertex1x = BaseVertex[i + 2]; 
-			float newVertex1y = BaseVertex[i + 3] - 0.1;
+			float newVertex1y = BaseVertex[i + 3] - 0.05;
 			BaseVertexTriangles.push_back(newVertex1x);
 			BaseVertexTriangles.push_back(newVertex1y);
 
 			// Add 2nd triangle
 			float newVertex2x = BaseVertex[i];
-			float newVertex2y = BaseVertex[i+1] - 0.1; //decrease y by one
+			float newVertex2y = BaseVertex[i+1] - 0.05; //decrease y by one
 
 			BaseVertexTriangles.push_back(BaseVertex[i]);
 			BaseVertexTriangles.push_back(BaseVertex[i + 1]);
@@ -192,26 +193,24 @@ void convertToTriangle()
 			BaseVertexTriangles.push_back(newVertex2y);
 		}
 
-		isVertical = !isVertical;
-		
-		// BaseVertexTriangles.push_back(newVertex1);
-
-		// int newVertex2 = BaseVertex[i] + 0.01;
-		
-		// //push triangle 2
-		// BaseVertexTriangles.push_back(BaseVertex[i]);
-		// BaseVertexTriangles.push_back(newVertex1);
-		// BaseVertexTriangles.push_back(newVertex2);
 	}
 
-	//isVertical = !isVerticalTemp;
-
-	//Debug contents
-	for (unsigned int i = 0 ;i < BaseVertexTriangles.size() - 1; i += 2)
+	// Debug info
+	if (debugModeOn)
 	{
-		cout << "[" << BaseVertexTriangles[i] <<"][" << BaseVertexTriangles[i+1] <<"]" << endl;
+		for (unsigned int i = 0 ;i < BaseVertexTriangles.size() - 1; i += 2)
+		{
+			cout << (i+1) <<") [" << BaseVertexTriangles[i] <<"][" << BaseVertexTriangles[i+1] <<"]" << endl;
+		}
+		cout << "\n\n---------------------------------------------- \n\n";
+	
+		cout << "Size: " << BaseVertexTriangles.size();
+		
+		for (unsigned int i = 0 ;i < BaseVertex.size() - 1; i += 2)
+		{
+			cout << "[" << BaseVertex[i] <<"][" << BaseVertex[i+1] <<"]" << endl;
+		}
 	}
-
 }
 
 
@@ -568,6 +567,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		n += 1;
 		hilbertCalc();
 
+		if (!isLine)
+		{
+			convertToTriangle();			
+		}
 	} 
 	if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
 	{
@@ -592,6 +595,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		{
 			hilbertCalc();
 		}
+
+		if (!isLine)
+		{
+			convertToTriangle();			
+		}
+
 	}
 
 	// Change veiw from: 
@@ -611,7 +620,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			cout << "Rendering mode: Triangles\n";
 		}
 	}
-
+	if (key == GLFW_KEY_D && action == GLFW_PRESS)
+	{
+		if (debugModeOn)
+		{
+			debugModeOn = false;
+			cout << "Debug Mode Turned off!\n";
+		}
+		else
+		{
+			debugModeOn = true;
+			cout << "Debug Mode Turned On!\n";
+		}	
+	}
 		
 }
 
